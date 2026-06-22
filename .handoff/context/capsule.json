@@ -1,0 +1,10 @@
+{
+  "schema": "handoff.context_capsule.v1",
+  "project_name": "meta_mcp",
+  "role": "Rust binary `meta-mcp`: a stdio JSON-RPC MCP server (protocol 2024-11-05) exposing meta multi-repo operations (workspace state, projects, git, dependency graph, exec) to AI assistants. Built directly on path deps ../meta_core and ../meta_cli as a Cargo workspace member (version.workspace = true).",
+  "plane": "foundation",
+  "tier": "A",
+  "northstar": "Meta makes multi-repo feel like monorepo without the downsides; the canon machinery stays green, versioned by the parent distribution.",
+  "next_command": "Plan in kb first (git kb board); mint execution cards via hf (ADR-0003)",
+  "source": "ARCHITECTURE-TRUTH.md census 2026-06-12"
+}
