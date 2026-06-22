@@ -130,15 +130,18 @@ impl McpServer {
     fn run(&mut self) -> Result<()> {
         let stdin = std::io::stdin();
         let mut stdout = std::io::stdout();
-        let reader = BufReader::new(stdin.lock());
+        let mut reader = BufReader::new(stdin.lock());
 
-        for line in reader.lines() {
-            let line = line?;
-            if line.is_empty() {
+        loop {
+            let Some((request_json, framed)) = Self::read_message(&mut reader)? else {
+                break;
+            };
+
+            if request_json.trim().is_empty() {
                 continue;
             }
 
-            let request: JsonRpcRequest = match serde_json::from_str(&line) {
+            let request: JsonRpcRequest = match serde_json::from_str(&request_json) {
                 Ok(req) => req,
                 Err(e) => {
                     eprintln!("Failed to parse request: {e}");
@@ -146,28 +149,94 @@ impl McpServer {
                 }
             };
 
-            let response = self.handle_request(&request);
-            let response_json = serde_json::to_string(&response)?;
-            writeln!(stdout, "{response_json}")?;
-            stdout.flush()?;
+            if let Some(response) = self.handle_request(&request) {
+                let response_json = serde_json::to_string(&response)?;
+                Self::write_message(&mut stdout, &response_json, framed)?;
+            }
         }
 
         Ok(())
     }
 
-    fn handle_request(&self, request: &JsonRpcRequest) -> JsonRpcResponse {
+    fn read_message<R: BufRead>(reader: &mut R) -> Result<Option<(String, bool)>> {
+        let mut first_line = String::new();
+        if reader.read_line(&mut first_line)? == 0 {
+            return Ok(None);
+        }
+
+        let first_line = first_line.trim_end_matches(['\r', '\n']);
+        if first_line.is_empty() {
+            return Ok(Some((String::new(), false)));
+        }
+
+        let Some((name, value)) = first_line.split_once(':') else {
+            return Ok(Some((first_line.to_string(), false)));
+        };
+
+        if !name.eq_ignore_ascii_case("content-length") {
+            return Ok(Some((first_line.to_string(), false)));
+        }
+
+        let content_len: usize = value
+            .trim()
+            .parse()
+            .context("invalid MCP Content-Length header")?;
+
+        let mut header_line = String::new();
+        loop {
+            header_line.clear();
+            if reader.read_line(&mut header_line)? == 0 {
+                anyhow::bail!("unexpected EOF while reading MCP headers");
+            }
+
+            if header_line == "\r\n" || header_line == "\n" {
+                break;
+            }
+        }
+
+        let mut body = vec![0; content_len];
+        reader.read_exact(&mut body)?;
+        let body = String::from_utf8(body).context("MCP request body is not valid UTF-8")?;
+        Ok(Some((body, true)))
+    }
+
+    fn write_message<W: Write>(writer: &mut W, response_json: &str, framed: bool) -> Result<()> {
+        if framed {
+            write!(
+                writer,
+                "Content-Length: {}\r\n\r\n{}",
+                response_json.len(),
+                response_json
+            )?;
+        } else {
+            writeln!(writer, "{response_json}")?;
+        }
+        writer.flush()?;
+        Ok(())
+    }
+
+    fn handle_request(&self, request: &JsonRpcRequest) -> Option<JsonRpcResponse> {
+        if request.id.is_none() {
+            match request.method.as_str() {
+                "notifications/initialized" | "initialized" => return None,
+                _ => {}
+            }
+        }
+
         let result = match request.method.as_str() {
             "initialize" => self.handle_initialize(),
-            "initialized" => return self.ok_response(request.id.clone(), serde_json::Value::Null),
+            "initialized" => {
+                return Some(self.ok_response(request.id.clone(), serde_json::Value::Null));
+            }
             "tools/list" => self.handle_list_tools(),
             "tools/call" => self.handle_call_tool(&request.params),
             _ => Err(anyhow::anyhow!("Method not found: {}", request.method)),
         };
 
-        match result {
+        Some(match result {
             Ok(value) => self.ok_response(request.id.clone(), value),
             Err(e) => self.error_response(request.id.clone(), -32603, e.to_string()),
-        }
+        })
     }
 
     fn ok_response(
