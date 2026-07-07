@@ -50,7 +50,7 @@ jobs:
           resolver = "2"
 
           [workspace.package]
-          version = "0.1.0"
+          version = "0.2.22"
           edition = "2021"
           license = "MIT"
           repository = "https://github.com/gitkb/meta"
@@ -58,7 +58,7 @@ jobs:
 
       - name: Create VERSION file
         shell: bash
-        run: echo "0.0.0-ci" > VERSION
+        run: echo "0.2.22-ci" > VERSION
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -104,14 +104,14 @@ jobs:
           resolver = "2"
 
           [workspace.package]
-          version = "0.1.0"
+          version = "0.2.22"
           edition = "2021"
           license = "MIT"
           repository = "https://github.com/gitkb/meta"
           EOF
 
       - name: Create VERSION file
-        run: echo "0.0.0-ci" > VERSION
+        run: echo "0.2.22-ci" > VERSION
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -159,14 +159,14 @@ jobs:
           resolver = "2"
 
           [workspace.package]
-          version = "0.1.0"
+          version = "0.2.22"
           edition = "2021"
           license = "MIT"
           repository = "https://github.com/gitkb/meta"
           EOF
 
       - name: Create VERSION file
-        run: echo "0.0.0-ci" > VERSION
+        run: echo "0.2.22-ci" > VERSION
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

@@ -237,7 +237,7 @@ impl McpServer {
             },
             Tool {
                 name: "meta_exec".to_string(),
-                description: "Execute a command across all meta projects".to_string(),
+                description: "DESTRUCTIVE/SHELL: Execute a caller-provided command across all meta projects. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -245,12 +245,16 @@ impl McpServer {
                             "type": "string",
                             "description": "Command to execute"
                         },
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement that this executes shell commands across repositories"
+                        },
                         "tag": {
                             "type": "string",
                             "description": "Filter projects by tag"
                         }
                     },
-                    "required": ["command"]
+                    "required": ["command", "confirm_destructive"]
                 }),
             },
             Tool {
@@ -314,15 +318,20 @@ impl McpServer {
             },
             Tool {
                 name: "meta_git_push".to_string(),
-                description: "Push commits to remote for all projects or filtered by tag".to_string(),
+                description: "DESTRUCTIVE/REMOTE: Push commits to remote for all projects or filtered by tag. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before pushing to remotes"
+                        },
                         "tag": {
                             "type": "string",
                             "description": "Filter projects by tag"
                         }
-                    }
+                    },
+                    "required": ["confirm_destructive"]
                 }),
             },
             Tool {
@@ -374,10 +383,14 @@ impl McpServer {
             },
             Tool {
                 name: "meta_git_add".to_string(),
-                description: "Stage files across repositories".to_string(),
+                description: "DESTRUCTIVE: Stage files across repositories. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before staging files"
+                        },
                         "project": {
                             "type": "string",
                             "description": "Specific project to add files in (optional, defaults to all)"
@@ -390,15 +403,20 @@ impl McpServer {
                             "type": "string",
                             "description": "Filter projects by tag"
                         }
-                    }
+                    },
+                    "required": ["confirm_destructive"]
                 }),
             },
             Tool {
                 name: "meta_git_commit".to_string(),
-                description: "Commit staged changes across repositories with a shared message".to_string(),
+                description: "DESTRUCTIVE: Commit staged changes across repositories with a shared message. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before creating commits"
+                        },
                         "message": {
                             "type": "string",
                             "description": "Commit message"
@@ -412,15 +430,19 @@ impl McpServer {
                             "description": "Filter projects by tag"
                         }
                     },
-                    "required": ["message"]
+                    "required": ["message", "confirm_destructive"]
                 }),
             },
             Tool {
                 name: "meta_git_checkout".to_string(),
-                description: "Checkout a branch across repositories".to_string(),
+                description: "DESTRUCTIVE: Checkout or create a branch across repositories. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before changing checked-out branches"
+                        },
                         "branch": {
                             "type": "string",
                             "description": "Branch name to checkout"
@@ -434,15 +456,19 @@ impl McpServer {
                             "description": "Filter projects by tag"
                         }
                     },
-                    "required": ["branch"]
+                    "required": ["branch", "confirm_destructive"]
                 }),
             },
             Tool {
                 name: "meta_git_multi_commit".to_string(),
-                description: "Create commits with different messages for each repository. Allows tailored commit messages per project.".to_string(),
+                description: "DESTRUCTIVE: Create commits with different messages for each repository. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before creating commits"
+                        },
                         "commits": {
                             "type": "array",
                             "description": "Array of commit objects, each specifying a project and message",
@@ -462,7 +488,7 @@ impl McpServer {
                             }
                         }
                     },
-                    "required": ["commits"]
+                    "required": ["commits", "confirm_destructive"]
                 }),
             },
             // ================================================================
@@ -662,10 +688,14 @@ impl McpServer {
             },
             Tool {
                 name: "meta_snapshot_restore".to_string(),
-                description: "Restore workspace to a previously saved snapshot".to_string(),
+                description: "DESTRUCTIVE: Restore workspace to a previously saved snapshot; force may reset hard. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement before restoring repository state"
+                        },
                         "name": {
                             "type": "string",
                             "description": "Name of the snapshot to restore"
@@ -675,15 +705,19 @@ impl McpServer {
                             "description": "Force restore even if there are uncommitted changes (default: false)"
                         }
                     },
-                    "required": ["name"]
+                    "required": ["name", "confirm_destructive"]
                 }),
             },
             Tool {
                 name: "meta_batch_execute".to_string(),
-                description: "Execute a command across projects with optional atomic rollback on failure".to_string(),
+                description: "DESTRUCTIVE/SHELL: Execute a caller-provided shell command across projects with optional atomic rollback. Requires confirm_destructive=true.".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
+                        "confirm_destructive": {
+                            "type": "boolean",
+                            "description": "Required true acknowledgement that this executes shell commands across repositories"
+                        },
                         "command": {
                             "type": "string",
                             "description": "Command to execute in each project"
@@ -697,7 +731,7 @@ impl McpServer {
                             "description": "If true, automatically rollback all projects if any fail (default: false)"
                         }
                     },
-                    "required": ["command"]
+                    "required": ["command", "confirm_destructive"]
                 }),
             },
         ];
@@ -813,6 +847,20 @@ impl McpServer {
         Ok(output)
     }
 
+    fn require_destructive_confirmation(args: &serde_json::Value, action: &str) -> Result<()> {
+        if args
+            .get("confirm_destructive")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "{action} requires confirm_destructive=true because it can mutate repositories or execute shell commands"
+            ))
+        }
+    }
+
     fn tool_git_status(&self, args: &serde_json::Value) -> Result<String> {
         let meta_dir = self
             .meta_dir
@@ -853,6 +901,8 @@ impl McpServer {
     }
 
     fn tool_exec(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_exec")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -981,6 +1031,8 @@ impl McpServer {
     }
 
     fn tool_git_push(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_git_push")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -1169,6 +1221,8 @@ impl McpServer {
     }
 
     fn tool_git_add(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_git_add")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -1199,6 +1253,8 @@ impl McpServer {
     }
 
     fn tool_git_commit(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_git_commit")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -1232,6 +1288,8 @@ impl McpServer {
     }
 
     fn tool_git_multi_commit(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_git_multi_commit")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -1339,6 +1397,8 @@ impl McpServer {
     }
 
     fn tool_git_checkout(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_git_checkout")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -2004,6 +2064,8 @@ impl McpServer {
     }
 
     fn tool_snapshot_restore(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_snapshot_restore")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -2103,6 +2165,8 @@ impl McpServer {
     }
 
     fn tool_batch_execute(&self, args: &serde_json::Value) -> Result<String> {
+        Self::require_destructive_confirmation(args, "meta_batch_execute")?;
+
         let meta_dir = self
             .meta_dir
             .as_ref()
@@ -2417,6 +2481,7 @@ mod tests {
 
         // Should have a commits property
         assert!(props.contains_key("commits"));
+        assert!(props.contains_key("confirm_destructive"));
 
         let commits_prop = props.get("commits").unwrap();
         assert_eq!(commits_prop.get("type").unwrap(), "array");
@@ -2432,6 +2497,50 @@ mod tests {
         let required_fields: Vec<&str> = item_required.iter().filter_map(|v| v.as_str()).collect();
         assert!(required_fields.contains(&"project"));
         assert!(required_fields.contains(&"message"));
+
+        let required = schema.get("required").unwrap().as_array().unwrap();
+        let required_fields: Vec<&str> = required.iter().filter_map(|v| v.as_str()).collect();
+        assert!(required_fields.contains(&"commits"));
+        assert!(required_fields.contains(&"confirm_destructive"));
+    }
+
+    #[test]
+    fn test_destructive_tools_require_confirmation() {
+        let server = McpServer::new();
+        let result = server.handle_list_tools().unwrap();
+        let tools = result
+            .as_object()
+            .unwrap()
+            .get("tools")
+            .unwrap()
+            .as_array()
+            .unwrap();
+
+        for name in [
+            "meta_exec",
+            "meta_git_push",
+            "meta_git_add",
+            "meta_git_commit",
+            "meta_git_checkout",
+            "meta_git_multi_commit",
+            "meta_snapshot_restore",
+            "meta_batch_execute",
+        ] {
+            let tool = tools
+                .iter()
+                .find(|t| t.get("name").and_then(|n| n.as_str()) == Some(name))
+                .unwrap_or_else(|| panic!("{name} tool should exist"));
+            let description = tool.get("description").and_then(|d| d.as_str()).unwrap();
+            assert!(description.contains("DESTRUCTIVE"));
+
+            let schema = tool.get("inputSchema").unwrap();
+            let props = schema.get("properties").unwrap().as_object().unwrap();
+            assert!(props.contains_key("confirm_destructive"));
+
+            let required = schema.get("required").unwrap().as_array().unwrap();
+            let required_fields: Vec<&str> = required.iter().filter_map(|v| v.as_str()).collect();
+            assert!(required_fields.contains(&"confirm_destructive"));
+        }
     }
 
     #[test]
@@ -2439,7 +2548,9 @@ mod tests {
         let (server, _tmp) = server_with_meta_dir();
 
         // Test with empty args - should fail with missing commits
-        let result = server.tool_git_multi_commit(&serde_json::json!({}));
+        let result = server.tool_git_multi_commit(&serde_json::json!({
+            "confirm_destructive": true
+        }));
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("commits"));
     }
@@ -2450,6 +2561,7 @@ mod tests {
 
         // Test with commits as string instead of array
         let result = server.tool_git_multi_commit(&serde_json::json!({
+            "confirm_destructive": true,
             "commits": "not an array"
         }));
         assert!(result.is_err());
@@ -2462,6 +2574,7 @@ mod tests {
 
         // Test with commit entry missing project
         let result = server.tool_git_multi_commit(&serde_json::json!({
+            "confirm_destructive": true,
             "commits": [
                 {"message": "Test commit"}
             ]
@@ -2476,6 +2589,7 @@ mod tests {
 
         // Test with commit entry missing message
         let result = server.tool_git_multi_commit(&serde_json::json!({
+            "confirm_destructive": true,
             "commits": [
                 {"project": "test-repo"}
             ]
